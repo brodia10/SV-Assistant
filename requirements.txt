@@ -1,0 +1,4 @@
+pipwin==0.4.9
+PyAudio==0.2.11
+pywin32==227
+SpeechRecognition==3.8.1
