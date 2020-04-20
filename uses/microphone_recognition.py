@@ -3,15 +3,12 @@
 import speech_recognition as sr
 import os
 import subprocess
-import win32com.client as comclt
+from pynput.keyboard import Key, Controller
+import time
 
-# wsh = comclt.Dispatch("WScript.Shell")
-# wsh.AppActivate("Notepad") # select another application
-# wsh.SendKeys("a") # send the keys you want
 
 # instatiate recognizer instance
 r = sr.Recognizer()
-
 
 # list available microphones
 print('\nCurrently available Microphones')
@@ -35,10 +32,34 @@ def open_steel_viking():
     print("Opening Steel Viking...", steel_viking_update)
     subprocess.call(["cscript", steel_viking_update])
 
+    # give time for steel viking message box to open and hit ok
+    keyboard.press(Key.enter)
+    keyboard.release(Key.enter)
+  
+
     # open steel viking
     # print("Opening Steel Viking...", steel_viking)
     # subprocess.Popen(steel_viking)
 
+
+# Speech to key press
+keyboard = Controller()
+exit_words = ['exit', 'Exit', 'stop', 'Stop', 'quit', 'Quit']
+
+def speech_to_key_press():
+    with sr.Microphone() as source:
+        r.adjust_for_ambient_noise(source, duration=.5)
+        print("\nSpeak anytime")
+        audio = r.listen(source, timeout=30, phrase_time_limit=15)
+        # as long as audio is listening type what is said
+        while audio:
+            keyboard.type(r.recognize_google(audio))
+            exit_words_match_source = any(exit_word in r.recognize_google(audio) for exit_word in exit_words)
+            if (exit_words_match_source):
+                print('You said an exit command, exiting SV assistant')
+                exit()
+            else:            
+                speech_to_key_press()
 
 
 # Keywords that will trigger opening SV. Accounts for mispronunciation, or different dialects.
@@ -64,9 +85,14 @@ try:
     # If any of the keywords were captured open Steel Viking
     if (keyword_matches_source):
         open_steel_viking()
+        # start speech to type for login
+        speech_to_key_press()
 
 
 except sr.UnknownValueError:
     print("Google Speech Recognition could not understand audio")
 except sr.RequestError as e:
     print("Could not request results from Google Speech Recognition service; {0}".format(e))
+
+
+
